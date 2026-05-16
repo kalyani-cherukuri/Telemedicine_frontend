@@ -1,11 +1,13 @@
 package com.telemedicine.controller;
 
-import com.telemedicine.model.Prescription;
+import com.telemedicine.dto.PrescriptionRequestDTO;
+import com.telemedicine.dto.PrescriptionResponseDTO;
+import com.telemedicine.security.CustomUserDetails;
 import com.telemedicine.service.PrescriptionService;
-import com.telemedicine.repository.PrescriptionRepository;
-import com.telemedicine.exception.ResourceNotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,34 +17,32 @@ import java.util.List;
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
-    private final PrescriptionRepository prescriptionRepository;
 
-    public PrescriptionController(PrescriptionService prescriptionService, PrescriptionRepository prescriptionRepository) {
+    public PrescriptionController(PrescriptionService prescriptionService) {
         this.prescriptionService = prescriptionService;
-        this.prescriptionRepository = prescriptionRepository;
     }
 
     @PreAuthorize("hasRole('DOCTOR')")
     @PostMapping
-    public ResponseEntity<Prescription> issuePrescription(@RequestParam Long consultationId, @RequestParam Long doctorId, @RequestBody Prescription prescription) {
-        return ResponseEntity.ok(prescriptionService.issuePrescription(consultationId, doctorId, prescription));
+    public ResponseEntity<PrescriptionResponseDTO> issuePrescription(
+            @Valid @RequestBody PrescriptionRequestDTO requestDTO,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(prescriptionService.issuePrescription(requestDTO, userDetails.getId()));
     }
 
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<Prescription>> getPatientPrescriptions(@PathVariable Long patientId) {
-        return ResponseEntity.ok(prescriptionRepository.findByPatientId(patientId));
+    public ResponseEntity<List<PrescriptionResponseDTO>> getPrescriptionsByPatient(@PathVariable Long patientId) {
+        return ResponseEntity.ok(prescriptionService.getPrescriptionsByPatient(patientId));
     }
 
     @PutMapping("/{id}/dispense")
-    public ResponseEntity<Prescription> dispensePrescription(@PathVariable Long id) {
+    public ResponseEntity<PrescriptionResponseDTO> dispensePrescription(@PathVariable Long id) {
         return ResponseEntity.ok(prescriptionService.dispensePrescription(id));
     }
 
     @PutMapping("/{id}/cancel")
-    public ResponseEntity<Prescription> cancelPrescription(@PathVariable Long id) {
-        Prescription prescription = prescriptionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Not found"));
-        prescription.setStatus(com.telemedicine.model.PrescriptionStatus.CANCELLED);
-        return ResponseEntity.ok(prescriptionRepository.save(prescription));
+    public ResponseEntity<PrescriptionResponseDTO> cancelPrescription(@PathVariable Long id) {
+        return ResponseEntity.ok(prescriptionService.cancelPrescription(id));
     }
 
     @GetMapping("/{id}/download")

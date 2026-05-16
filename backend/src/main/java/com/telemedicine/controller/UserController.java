@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
@@ -21,26 +21,11 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/users")
+    @GetMapping
     public ResponseEntity<List<User>> getUsers(@RequestParam(required = false) Role role) {
         if (role != null) {
             return ResponseEntity.ok(userService.getUsersByRole(role));
         }
         return ResponseEntity.ok(userService.getAllUsers());
-    }
-
-    @PostMapping("/patient-profiles")
-    public ResponseEntity<PatientProfile> createPatientProfile(@RequestBody PatientProfile profile) {
-        return ResponseEntity.ok(userService.createPatientProfile(profile));
-    }
-
-    @PostMapping("/doctor-profiles")
-    public ResponseEntity<DoctorProfile> createDoctorProfile(@RequestBody DoctorProfile profile) {
-        return ResponseEntity.ok(userService.createDoctorProfile(profile));
-    }
-
-    @GetMapping("/doctor-profiles/specialization/{specialization}")
-    public ResponseEntity<List<DoctorProfile>> getDoctorsBySpecialization(@PathVariable Specialization specialization) {
-        return ResponseEntity.ok(userService.getDoctorsBySpecialization(specialization));
     }
 }

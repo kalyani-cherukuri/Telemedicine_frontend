@@ -1,5 +1,6 @@
 package com.telemedicine.service;
 
+import com.telemedicine.dto.*;
 import com.telemedicine.model.*;
 import com.telemedicine.repository.*;
 import com.telemedicine.exception.*;
@@ -7,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PrescriptionService {
@@ -14,16 +17,21 @@ public class PrescriptionService {
     private final PrescriptionRepository prescriptionRepository;
     private final ConsultationRepository consultationRepository;
     private final UserRepository userRepository;
+    private final DtoMapper dtoMapper;
 
-    public PrescriptionService(PrescriptionRepository prescriptionRepository, ConsultationRepository consultationRepository, UserRepository userRepository) {
+    public PrescriptionService(PrescriptionRepository prescriptionRepository, 
+                               ConsultationRepository consultationRepository, 
+                               UserRepository userRepository,
+                               DtoMapper dtoMapper) {
         this.prescriptionRepository = prescriptionRepository;
         this.consultationRepository = consultationRepository;
         this.userRepository = userRepository;
+        this.dtoMapper = dtoMapper;
     }
 
     @Transactional
-    public Prescription issuePrescription(Long consultationId, Long doctorId, Prescription prescription) {
-        Consultation consultation = consultationRepository.findById(consultationId)
+    public PrescriptionResponseDTO issuePrescription(PrescriptionRequestDTO request, Long doctorId) {
+        Consultation consultation = consultationRepository.findById(request.getConsultationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Consultation not found"));
         
         User doctor = userRepository.findById(doctorId)
@@ -37,29 +45,31 @@ public class PrescriptionService {
             throw new BusinessException("Can only be issued after a COMPLETED consultation.");
         }
 
-        if (prescription.getItems() == null || prescription.getItems().isEmpty()) {
+        if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new BusinessException("Must contain at least 1 medicine.");
         }
+
+        Prescription prescription = dtoMapper.toEntity(request, consultation, consultation.getPatient(), doctor);
         
-        if (prescription.getDigitalSignature() == null || prescription.getDigitalSignature().isEmpty()) {
-            throw new BusinessException("Digital signature is mandatory for validity.");
-        }
+        List<PrescriptionItem> items = request.getItems().stream()
+                .map(itemDto -> dtoMapper.toEntity(itemDto, prescription))
+                .collect(Collectors.toList());
+        
+        prescription.setItems(items);
 
-        prescription.setConsultation(consultation);
-        prescription.setPatient(consultation.getPatient());
-        prescription.setDoctor(doctor);
-        prescription.setIssuedAt(LocalDateTime.now());
-        prescription.setValidUntil(LocalDateTime.now().plusDays(30)); // Valid for 30 days
-        prescription.setStatus(PrescriptionStatus.ACTIVE);
-
-        // Link items
-        prescription.getItems().forEach(item -> item.setPrescription(prescription));
-
-        return prescriptionRepository.save(prescription);
+        Prescription saved = prescriptionRepository.save(prescription);
+        return dtoMapper.toDto(saved);
     }
 
     @Transactional
-    public Prescription dispensePrescription(Long id) {
+    public List<PrescriptionResponseDTO> getPrescriptionsByPatient(Long patientId) {
+        return prescriptionRepository.findByPatientId(patientId).stream()
+                .map(dtoMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public PrescriptionResponseDTO dispensePrescription(Long id) {
         Prescription prescription = prescriptionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
 
@@ -68,6 +78,21 @@ public class PrescriptionService {
         }
         
         prescription.setStatus(PrescriptionStatus.DISPENSED);
-        return prescriptionRepository.save(prescription);
+        Prescription saved = prescriptionRepository.save(prescription);
+        return dtoMapper.toDto(saved);
+    }
+
+    @Transactional
+    public PrescriptionResponseDTO cancelPrescription(Long id) {
+        Prescription prescription = prescriptionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription not found"));
+
+        if (prescription.getStatus() != PrescriptionStatus.ACTIVE) {
+            throw new BusinessException("Only active prescriptions can be cancelled.");
+        }
+        
+        prescription.setStatus(PrescriptionStatus.CANCELLED);
+        Prescription saved = prescriptionRepository.save(prescription);
+        return dtoMapper.toDto(saved);
     }
 }
