@@ -49,4 +49,12 @@ public class PrescriptionController {
     public ResponseEntity<String> downloadPrescription(@PathVariable Long id) {
         return ResponseEntity.ok("Dummy PDF content for Prescription " + id);
     }
+    @GetMapping
+public ResponseEntity<List<PrescriptionResponseDTO>>
+getAllPrescriptions() {
+
+    return ResponseEntity.ok(
+        prescriptionService.getAllPrescriptions()
+    );
+}
 }

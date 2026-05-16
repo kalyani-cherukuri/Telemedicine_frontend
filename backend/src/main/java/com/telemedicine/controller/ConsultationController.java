@@ -45,7 +45,16 @@ public class ConsultationController {
     public ResponseEntity<List<ConsultationResponseDTO>> getPatientConsultations(@PathVariable Long patientId) {
         return ResponseEntity.ok(consultationService.getPatientConsultations(patientId));
     }
+    
+    
+    @GetMapping
+public ResponseEntity<List<ConsultationResponseDTO>>
+getAllConsultations() {
 
+    return ResponseEntity.ok(
+        consultationService.getAllConsultations()
+    );
+}
     @GetMapping("/doctor/{doctorId}")
     public ResponseEntity<List<ConsultationResponseDTO>> getDoctorConsultations(@PathVariable Long doctorId) {
         return ResponseEntity.ok(consultationService.getDoctorConsultations(doctorId));

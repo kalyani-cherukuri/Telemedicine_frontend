@@ -1,19 +1,19 @@
 import { Navigate } from "react-router-dom";
 
-import { useAuth } from "../context/AuthContext";
+function ProtectedRoute({ children, role }) {
 
-const ProtectedRoute = ({
-  children,
-}) => {
-  const { user } = useAuth();
+  const token = localStorage.getItem("token");
+  const userRole = localStorage.getItem("role");
 
-  // NOT LOGGED IN
-  if (!user) {
-    return <Navigate to="/login" />;
+  if (!token) {
+    return <Navigate to="/" />;
   }
 
-  // LOGGED IN
+  if (role && userRole !== role) {
+    return <Navigate to="/" />;
+  }
+
   return children;
-};
+}
 
 export default ProtectedRoute;

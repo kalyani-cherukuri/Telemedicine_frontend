@@ -95,4 +95,14 @@ public class PrescriptionService {
         Prescription saved = prescriptionRepository.save(prescription);
         return dtoMapper.toDto(saved);
     }
+public List<PrescriptionResponseDTO>
+getAllPrescriptions() {
+
+    List<Prescription> prescriptions =
+        prescriptionRepository.findAll();
+
+    return prescriptions.stream()
+        .map(dtoMapper::toDto)
+        .toList();
+}
 }

@@ -40,7 +40,7 @@ public class ConsultationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
         User doctor = userRepository.findById(requestDTO.doctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
-
+       
         if (patient.getRole() != Role.PATIENT) throw new BusinessException("Only PATIENTs can book");
         if (doctor.getRole() != Role.DOCTOR) throw new BusinessException("Target user is not a DOCTOR");
 
@@ -52,6 +52,9 @@ public class ConsultationService {
         if (age < 18) throw new BusinessException("Patients must be >= 18 years old for self-booking.");
 
         Consultation consultation = dtoMapper.toEntity(requestDTO, patient, doctor);
+        consultation.setScheduledAt(
+        requestDTO.scheduledAt()
+);
         consultation.setStatus(ConsultationStatus.SCHEDULED);
         if (consultation.getStartedAt() == null) {
             consultation.setStartedAt(LocalDateTime.now().plusDays(1)); // dummy default
@@ -134,4 +137,14 @@ public class ConsultationService {
         log.setChangedBy(user);
         logRepository.save(log);
     }
+public List<ConsultationResponseDTO>
+getAllConsultations() {
+
+    List<Consultation> consultations =
+        consultationRepository.findAll();
+
+    return consultations.stream()
+        .map(dtoMapper::toDto)
+        .toList();
+}
 }
