@@ -1,12 +1,17 @@
 package com.telemedicine.service;
 
+import com.telemedicine.dto.DtoMapper;
+import com.telemedicine.dto.MedicalRecordRequestDTO;
+import com.telemedicine.dto.MedicalRecordResponseDTO;
 import com.telemedicine.model.*;
 import com.telemedicine.repository.*;
 import com.telemedicine.exception.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MedicalRecordService {
@@ -14,37 +19,44 @@ public class MedicalRecordService {
     private final MedicalRecordRepository medicalRecordRepository;
     private final AccessLogRepository accessLogRepository;
     private final UserRepository userRepository;
+    private final DtoMapper dtoMapper;
 
-    public MedicalRecordService(MedicalRecordRepository medicalRecordRepository, AccessLogRepository accessLogRepository, UserRepository userRepository) {
+    public MedicalRecordService(MedicalRecordRepository medicalRecordRepository, 
+                               AccessLogRepository accessLogRepository, 
+                               UserRepository userRepository,
+                               DtoMapper dtoMapper) {
         this.medicalRecordRepository = medicalRecordRepository;
         this.accessLogRepository = accessLogRepository;
         this.userRepository = userRepository;
+        this.dtoMapper = dtoMapper;
     }
 
-    public MedicalRecord createMedicalRecord(MedicalRecord record) {
-        // Validation: file size must be <= 10MB
-        // For REST, this is checked in the controller if MultipartFile is used. 
-        // Here we just save the entity.
-        if (record.getFileUrl() == null || record.getFileUrl().isEmpty()) {
-            throw new BusinessException("File URL is mandatory.");
+    @Transactional
+    public MedicalRecordResponseDTO addMedicalRecord(MedicalRecordRequestDTO request, Long doctorId) {
+        User patient = userRepository.findById(request.getPatientId())
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
+        User doctor = userRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+
+        if (doctor.getRole() != Role.DOCTOR) {
+            throw new BusinessException("Only DOCTORs can record medical records.");
         }
+
+        MedicalRecord record = dtoMapper.toEntity(request, patient, doctor);
+        MedicalRecord saved = medicalRecordRepository.save(record);
         
-        record.setRecordedAt(LocalDateTime.now());
-        return medicalRecordRepository.save(record);
+        return dtoMapper.toDto(saved);
     }
 
-    public List<MedicalRecord> getPatientRecords(Long patientId, Long accessedById) {
-        User patient = userRepository.findById(patientId).orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
-        User accessor = userRepository.findById(accessedById).orElseThrow(() -> new ResourceNotFoundException("Accessor not found"));
+    @Transactional
+    public List<MedicalRecordResponseDTO> getMedicalRecordsByPatient(Long patientId) {
+        User patient = userRepository.findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
         
-        // Log access
-        AccessLog log = new AccessLog();
-        log.setPatient(patient);
-        log.setAccessedBy(accessor);
-        log.setAccessType("VIEW_EHR");
-        log.setAccessedAt(LocalDateTime.now());
-        accessLogRepository.save(log);
-
-        return medicalRecordRepository.findByPatientId(patientId);
+        List<MedicalRecord> records = medicalRecordRepository.findByPatientId(patientId);
+        
+        return records.stream()
+                .map(dtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

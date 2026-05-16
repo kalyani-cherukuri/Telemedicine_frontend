@@ -1,7 +1,10 @@
 package com.telemedicine.controller;
 
+import com.telemedicine.dto.ConsultationRequestDTO;
+import com.telemedicine.dto.ConsultationResponseDTO;
 import com.telemedicine.model.Consultation;
 import com.telemedicine.service.ConsultationService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,32 +22,32 @@ public class ConsultationController {
     }
 
     @PostMapping
-    public ResponseEntity<Consultation> bookConsultation(@RequestBody Consultation consultation) {
-        return ResponseEntity.ok(consultationService.bookConsultation(consultation));
+    public ResponseEntity<ConsultationResponseDTO> bookConsultation(@Valid @RequestBody ConsultationRequestDTO requestDTO) {
+        return ResponseEntity.ok(consultationService.bookConsultation(requestDTO));
     }
 
     @PutMapping("/{id}/start")
-    public ResponseEntity<Consultation> startConsultation(@PathVariable Long id) {
+    public ResponseEntity<ConsultationResponseDTO> startConsultation(@PathVariable Long id) {
         return ResponseEntity.ok(consultationService.startConsultation(id));
     }
 
     @PutMapping("/{id}/complete")
-    public ResponseEntity<Consultation> completeConsultation(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<ConsultationResponseDTO> completeConsultation(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         return ResponseEntity.ok(consultationService.completeConsultation(id, payload.get("diagnosis"), payload.get("notes")));
     }
 
     @PutMapping("/{id}/cancel")
-    public ResponseEntity<Consultation> cancelConsultation(@PathVariable Long id) {
+    public ResponseEntity<ConsultationResponseDTO> cancelConsultation(@PathVariable Long id) {
         return ResponseEntity.ok(consultationService.cancelConsultation(id));
     }
 
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<Consultation>> getPatientConsultations(@PathVariable Long patientId) {
+    public ResponseEntity<List<ConsultationResponseDTO>> getPatientConsultations(@PathVariable Long patientId) {
         return ResponseEntity.ok(consultationService.getPatientConsultations(patientId));
     }
 
     @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<List<Consultation>> getDoctorConsultations(@PathVariable Long doctorId) {
+    public ResponseEntity<List<ConsultationResponseDTO>> getDoctorConsultations(@PathVariable Long doctorId) {
         return ResponseEntity.ok(consultationService.getDoctorConsultations(doctorId));
     }
 }
