@@ -24,6 +24,8 @@ public class Consultation {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ConsultationType consultationType;
+    @Column(nullable = false)
+private LocalDateTime scheduledAt;
 
     @Column(columnDefinition = "TEXT")
     private String symptoms;
@@ -38,7 +40,7 @@ public class Consultation {
     private Prescription prescription;
 
     private LocalDateTime startedAt;
-    
+   
     private LocalDateTime endedAt;
 
     @Enumerated(EnumType.STRING)

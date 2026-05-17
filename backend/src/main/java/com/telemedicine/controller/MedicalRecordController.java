@@ -23,9 +23,13 @@ public class MedicalRecordController {
     }
 
     @PreAuthorize("hasRole('DOCTOR')")
-    @PostMapping
+    @PostMapping(
+        consumes = {
+                "multipart/form-data"
+        }
+)
     public ResponseEntity<MedicalRecordResponseDTO> addMedicalRecord(
-            @Valid @RequestBody MedicalRecordRequestDTO requestDTO,
+            @Valid @ModelAttribute MedicalRecordRequestDTO requestDTO,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(medicalRecordService.addMedicalRecord(requestDTO, userDetails.getId()));
     }

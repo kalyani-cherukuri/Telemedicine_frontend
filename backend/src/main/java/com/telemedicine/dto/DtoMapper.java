@@ -48,7 +48,8 @@ public class DtoMapper {
         record.setRecordType(dto.getRecordType());
         record.setTitle(dto.getTitle());
         record.setDescription(dto.getDescription());
-        record.setFileUrl(dto.getFileUrl());
+        record.setFileUrl(dto.getFile()
+               .getOriginalFilename());
         record.setRecordedAt(LocalDateTime.now());
         return record;
     }

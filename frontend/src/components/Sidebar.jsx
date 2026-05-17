@@ -1,124 +1,62 @@
-import { NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+function Sidebar() {
 
-const Sidebar = () => {
-  const { user, logout } =useAuth();
-  const navigate = useNavigate();
-
-const handleLogout = () => {
-  logout();
-
-  navigate("/login");
-};
-
-  const style =
-    "block p-3 rounded-xl hover:bg-white hover:text-blue-700 transition";
+  const role = localStorage.getItem("role");
 
   return (
-    <div className="w-64 bg-blue-700 text-white min-h-screen p-5 hidden md:block">
-      <h2 className="text-3xl font-bold mb-10">
+    <div className="w-[250px] bg-black text-white p-5">
+
+      <h1 className="text-2xl font-bold mb-10">
         Telemedicine
-      </h2>
+      </h1>
 
-      <div className="space-y-4">
-        {/* Dashboard */}
-        <NavLink
-          to="/dashboard"
-          className={style}
-        >
-          Dashboard
-        </NavLink>
+      <div className="flex flex-col gap-4">
 
-        {/* Profile */}
-        <NavLink
-          to="/profile"
-          className={style}
-        >
-          Profile
-        </NavLink>
-
-        {/* Doctors */}
-        {(user?.role === "PATIENT" ||
-          user?.role === "ADMIN") && (
-          <NavLink
-            to="/doctors"
-            className={style}
-          >
-            Doctors
-          </NavLink>
+        {role === "ROLE_PATIENT" && (
+          <>
+            <Link to="/patient/dashboard">Dashboard</Link>
+            <Link to="/patient/profile">Profile</Link>
+            <Link to="/patient/doctors">Doctors</Link>
+            <Link to="/patient/consultations">Consultations</Link>
+            <Link to="/patient/prescriptions">Prescriptions</Link>
+            <Link to="/patient/records">Medical Records</Link>
+          </>
         )}
 
-        {/* Appointments */}
-        {(user?.role === "PATIENT" ||
-          user?.role === "DOCTOR" ||
-          user?.role === "ADMIN") && (
-          <NavLink
-            to="/appointments"
-            className={style}
-          >
-            Appointments
-          </NavLink>
+        {role === "ROLE_DOCTOR" && (
+          <>
+            <Link to="/doctor/dashboard">Dashboard</Link>
+            <Link to="/doctor/profile">Profile</Link>
+            <Link to="/doctor/consultations">Consultations</Link>
+            <Link to="/doctor/prescriptions">Prescriptions</Link>
+            <Link to="/doctor/records">Medical Records</Link>
+          </>
         )}
-        <NavLink
-  to="/consultations"
-  className={style}
->
-  Consultations
-</NavLink>
 
-        {/* Prescriptions */}
-        <NavLink
-          to="/prescriptions"
-          className={style}
-        >
-          Prescriptions
-        </NavLink>
-        {user?.role ===
-  "PHARMACIST" && (
-  <NavLink
-    to="/pharmacist-verification"
-    className={style}
-  >
-    Verify Prescriptions
-  </NavLink>
-)}
-        {user?.role === "DOCTOR" && (
-  <NavLink
-    to="/create-prescription"
-    className={style}
-  >
-    Create Prescription
-  </NavLink>
-)}
+        {role === "ROLE_ADMIN" && (
+          <>
+            <Link to="/admin/dashboard">Dashboard</Link>
+            <Link to="/admin/users">Users</Link>
+            <Link to="/admin/consultations">Consultations</Link>
+            <Link to="/admin/prescriptions">Prescriptions</Link>
+            <Link to="/admin/logs">Audit Logs</Link>
+          </>
+        )}
 
+        {role === "ROLE_PHARMACIST" && (
+          <>
+            <Link to="/pharmacist/dashboard">Dashboard</Link>
+            <Link to="/pharmacist/prescriptions">
+              Verify Prescriptions
+            </Link>
+          </>
+        )}
 
-        {/* Medical Records */}
-        <NavLink
-          to="/medical-records"
-          className={style}
-        >
-          Medical Records
-        </NavLink>
-        {user?.role === "ADMIN" && (
-  <NavLink
-    to="/audit-logs"
-    className={style}
-  >
-    Audit Logs
-  </NavLink>
-  
-)}
-<button
-  onClick={handleLogout}
-  className="w-full mt-10 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl transition"
->
-  Logout
-</button>
       </div>
+
     </div>
   );
-};
+}
 
 export default Sidebar;
