@@ -4,7 +4,7 @@ import DashboardLayout from "../../layout/DashboardLayout";
 
 import {
   createDoctorProfile,
-} from "../../services/profileService";
+} from "../../services/ProfileService";
 
 function Profile() {
 
@@ -28,6 +28,8 @@ function Profile() {
 
       yearsOfExperience: "",
     });
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleChange =
     (e) => {
@@ -46,22 +48,17 @@ function Profile() {
       e.preventDefault();
 
       try {
-
+        setSubmitting(true);
+        setMessage("");
         await createDoctorProfile(
           formData
         );
-
-        alert(
-          "Profile Created Successfully"
-        );
+        setMessage("Profile created successfully.");
 
       } catch (error) {
-
-        console.log(error);
-
-        alert(
-          "Failed to Create Profile"
-        );
+        setMessage(error.response?.data?.message || "Failed to create profile.");
+      } finally {
+        setSubmitting(false);
       }
     };
 
@@ -115,6 +112,7 @@ function Profile() {
           placeholder="Qualification"
           className="border p-3 w-full mb-4 rounded"
           onChange={handleChange}
+          required
         />
 
         <input
@@ -123,6 +121,7 @@ function Profile() {
           placeholder="License Number"
           className="border p-3 w-full mb-4 rounded"
           onChange={handleChange}
+          required
         />
 
         <input
@@ -131,6 +130,7 @@ function Profile() {
           placeholder="Consultation Fee"
           className="border p-3 w-full mb-4 rounded"
           onChange={handleChange}
+          required
         />
 
         <input
@@ -139,13 +139,17 @@ function Profile() {
           placeholder="Years Of Experience"
           className="border p-3 w-full mb-4 rounded"
           onChange={handleChange}
+          required
         />
+
+        {message && <p className="mb-4 text-sm text-gray-700">{message}</p>}
 
         <button
           type="submit"
-          className="bg-black text-white px-6 py-3 rounded"
+          disabled={submitting}
+          className="rounded bg-black px-6 py-3 text-white disabled:opacity-60"
         >
-          Save Profile
+          {submitting ? "Saving..." : "Save Profile"}
         </button>
 
       </form>

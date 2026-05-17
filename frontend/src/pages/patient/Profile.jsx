@@ -1,13 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
-import API from "../../api/axios";
+import { createPatientProfile } from "../../services/ProfileService";
 
 function Profile() {
-
-  const [profile, setProfile] =
-    useState(null);
 
   const [dateOfBirth,
     setDateOfBirth] =
@@ -32,42 +29,9 @@ function Profile() {
   const [chronicConditions,
     setChronicConditions] =
     useState("");
-
-  const fetchProfile =
-    async () => {
-
-      try {
-
-        const patientId =
-          localStorage.getItem(
-            "userId"
-          );
-
-        const response =
-          await API.get(
-            `/patient-profiles/${patientId}`
-          );
-
-        const fetchedProfile =
-          response.data;
-
-        setProfile(
-          fetchedProfile
-        );
-
-      } catch (error) {
-
-        console.log(error);
-
-        setProfile(null);
-      }
-    };
-
-  useEffect(() => {
-
-    fetchProfile();
-
-  }, []);
+  const [savedProfile, setSavedProfile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleSubmit =
     async (e) => {
@@ -75,16 +39,7 @@ function Profile() {
       e.preventDefault();
 
       try {
-
-        const patientId =
-          localStorage.getItem(
-            "userId"
-          );
-
         const profileData = {
-
-          patientId,
-
           dateOfBirth,
 
           gender,
@@ -98,26 +53,16 @@ function Profile() {
           chronicConditions,
         };
 
-        await API.post(
-          "/patient-profiles",
-          profileData
-        );
-
-        alert(
-          "Profile Saved"
-        );
-
-        fetchProfile();
+        setSubmitting(true);
+        setMessage("");
+        const createdProfile = await createPatientProfile(profileData);
+        setSavedProfile(createdProfile);
+        setMessage("Profile saved.");
 
       } catch (error) {
-
-        console.log(error);
-
-        alert(
-          error.response?.data
-            ?.message ||
-          "Failed to save profile"
-        );
+        setMessage(error.response?.data?.message || "Failed to save profile.");
+      } finally {
+        setSubmitting(false);
       }
     };
 
@@ -128,7 +73,7 @@ function Profile() {
         Patient Profile
       </h1>
 
-      {profile ? (
+      {savedProfile ? (
 
         <div className="bg-white p-8 rounded shadow">
 
@@ -140,7 +85,7 @@ function Profile() {
 
             {" "}
 
-            {profile.dateOfBirth}
+            {savedProfile.dateOfBirth}
 
           </div>
 
@@ -152,7 +97,7 @@ function Profile() {
 
             {" "}
 
-            {profile.gender}
+            {savedProfile.gender}
 
           </div>
 
@@ -164,7 +109,7 @@ function Profile() {
 
             {" "}
 
-            {profile.bloodGroup}
+            {savedProfile.bloodGroup}
 
           </div>
 
@@ -176,7 +121,7 @@ function Profile() {
 
             {" "}
 
-            {profile.emergencyContact}
+            {savedProfile.emergencyContact}
 
           </div>
 
@@ -188,7 +133,7 @@ function Profile() {
 
             {" "}
 
-            {profile.allergies}
+            {savedProfile.allergies}
 
           </div>
 
@@ -200,7 +145,7 @@ function Profile() {
 
             {" "}
 
-            {profile.chronicConditions}
+            {savedProfile.chronicConditions}
 
           </div>
 
@@ -222,6 +167,7 @@ function Profile() {
               )
             }
             className="border p-4 w-full mb-5 rounded"
+            required
           />
 
           <select
@@ -232,6 +178,7 @@ function Profile() {
               )
             }
             className="border p-4 w-full mb-5 rounded"
+            required
           >
 
             <option value="">
@@ -262,6 +209,7 @@ function Profile() {
               )
             }
             className="border p-4 w-full mb-5 rounded"
+            required
           />
 
           <input
@@ -274,6 +222,7 @@ function Profile() {
               )
             }
             className="border p-4 w-full mb-5 rounded"
+            required
           />
 
           <textarea
@@ -298,11 +247,14 @@ function Profile() {
             className="border p-4 w-full mb-5 rounded"
           />
 
+          {message && <p className="mb-5 text-sm text-gray-700">{message}</p>}
+
           <button
             type="submit"
-            className="bg-black text-white px-8 py-4 rounded"
+            disabled={submitting}
+            className="rounded bg-black px-8 py-4 text-white disabled:opacity-60"
           >
-            Save Profile
+            {submitting ? "Saving..." : "Save Profile"}
           </button>
 
         </form>

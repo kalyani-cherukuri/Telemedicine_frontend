@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
@@ -9,56 +9,21 @@ import {
 import {
   getDoctorPrescriptions,
 } from "../../services/prescriptionService";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function DoctorDashboard() {
 
-  const [consultations,
-    setConsultations] =
-    useState([]);
-
-  const [prescriptions,
-    setPrescriptions] =
-    useState([]);
-
-  const fetchDashboardData =
-    async () => {
-
-      try {
-
-        const doctorId =
-          localStorage.getItem(
-            "userId"
-          );
-
-        const consultationData =
-          await getDoctorConsultations(
-            doctorId
-          );
-
-        setConsultations(
-          consultationData
-        );
-
-        const prescriptionData =
-          await getDoctorPrescriptions(
-            doctorId
-          );
-
-        setPrescriptions(
-          prescriptionData
-        );
-
-      } catch (error) {
-
-        console.log(error);
-      }
-    };
-
-  useEffect(() => {
-
-    fetchDashboardData();
-
-  }, []);
+  const doctorId = localStorage.getItem("userId");
+  const loadDashboard = useCallback(async () => {
+    const [consultations, prescriptions] = await Promise.all([
+      getDoctorConsultations(doctorId),
+      getDoctorPrescriptions(doctorId),
+    ]);
+    return { consultations, prescriptions };
+  }, [doctorId]);
+  const { data } = useAsyncResource(loadDashboard);
+  const consultations = data.consultations || [];
+  const prescriptions = data.prescriptions || [];
 
   const todayConsultations =
     consultations.filter(

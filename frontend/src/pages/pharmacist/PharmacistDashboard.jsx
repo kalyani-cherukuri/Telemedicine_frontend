@@ -1,38 +1,17 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
 import API from "../../api/axios";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function PharmacistDashboard() {
 
-  const [prescriptions,
-    setPrescriptions] =
-    useState([]);
-
-  const fetchPrescriptions =
-    async () => {
-
-      try {
-
-        const response =
-          await API.get("/prescriptions");
-
-        setPrescriptions(
-          response.data
-        );
-
-      } catch (error) {
-
-        console.log(error);
-      }
-    };
-
-  useEffect(() => {
-
-    fetchPrescriptions();
-
+  const loadPrescriptions = useCallback(async () => {
+    const response = await API.get("/prescriptions");
+    return response.data;
   }, []);
+  const { data: prescriptions } = useAsyncResource(loadPrescriptions);
 
   const activeCount =
     prescriptions.filter(

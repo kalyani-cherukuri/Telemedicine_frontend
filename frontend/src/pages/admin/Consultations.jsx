@@ -1,38 +1,22 @@
-import { useEffect, useState } from "react";
-
 import DashboardLayout from "../../layout/DashboardLayout";
+import { useCallback } from "react";
 
 import API from "../../api/axios";
+import { EmptyState, ErrorState, LoadingState } from "../../components/PageState";
+import StatusBadge from "../../components/StatusBadge";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function Consultations() {
-
-  const [consultations,
-    setConsultations] =
-    useState([]);
-
-  const fetchConsultations =
-    async () => {
-
-      try {
-
-        const response =
-          await API.get("/consultations");
-
-        setConsultations(
-          response.data
-        );
-
-      } catch (error) {
-
-        console.log(error);
-      }
-    };
-
-  useEffect(() => {
-
-    fetchConsultations();
-
+  const loadConsultations = useCallback(async () => {
+    const response = await API.get("/consultations");
+    return response.data;
   }, []);
+
+  const {
+    data: consultations,
+    loading,
+    error,
+  } = useAsyncResource(loadConsultations);
 
   return (
     <DashboardLayout>
@@ -41,7 +25,13 @@ function Consultations() {
         Consultation Monitoring
       </h1>
 
-      <div className="bg-white rounded shadow overflow-x-auto">
+      {loading && <LoadingState label="Loading consultations..." />}
+      {error && <ErrorState message={error} />}
+      {!loading && !error && consultations.length === 0 && (
+        <EmptyState message="No consultations found." />
+      )}
+
+      {!loading && !error && consultations.length > 0 && <div className="overflow-x-auto rounded bg-white shadow">
 
         <table className="w-full">
 
@@ -110,28 +100,7 @@ function Consultations() {
 
                 <td className="p-4">
 
-                  <span
-                    className={`px-3 py-1 rounded text-white
-
-                    ${consultation.status ===
-                      "COMPLETED"
-                      ? "bg-green-500"
-                      : consultation.status ===
-                        "CANCELLED"
-                      ? "bg-red-500"
-                      : consultation.status ===
-                        "IN_PROGRESS"
-                      ? "bg-blue-500"
-                      : consultation.status ===
-                        "NO_SHOW"
-                      ? "bg-yellow-500"
-                      : "bg-gray-500"
-                    }`}
-                  >
-
-                    {consultation.status}
-
-                  </span>
+                  <StatusBadge status={consultation.status} />
 
                 </td>
 
@@ -150,7 +119,7 @@ function Consultations() {
 
         </table>
 
-      </div>
+      </div>}
 
     </DashboardLayout>
   );

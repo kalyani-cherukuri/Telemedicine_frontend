@@ -1,42 +1,27 @@
-import { useEffect, useState } from "react";
-
 import DashboardLayout from "../../layout/DashboardLayout";
+import { useCallback } from "react";
 
 import {
   dispensePrescription,
 } from "../../services/prescriptionService";
 
 import API from "../../api/axios";
+import { EmptyState, ErrorState, LoadingState } from "../../components/PageState";
+import StatusBadge from "../../components/StatusBadge";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function Prescriptions() {
-
-  const [prescriptions,
-    setPrescriptions] =
-    useState([]);
-
-  const fetchPrescriptions =
-    async () => {
-
-      try {
-
-        const response =
-          await API.get("/prescriptions");
-
-        setPrescriptions(
-          response.data
-        );
-
-      } catch (error) {
-
-        console.log(error);
-      }
-    };
-
-  useEffect(() => {
-
-    fetchPrescriptions();
-
+  const loadPrescriptions = useCallback(async () => {
+    const response = await API.get("/prescriptions");
+    return response.data;
   }, []);
+
+  const {
+    data: prescriptions,
+    loading,
+    error,
+    reload,
+  } = useAsyncResource(loadPrescriptions);
 
   const handleDispense =
     async (id) => {
@@ -45,11 +30,7 @@ function Prescriptions() {
 
         await dispensePrescription(id);
 
-        alert(
-          "Prescription Dispensed"
-        );
-
-        fetchPrescriptions();
+        reload();
 
       } catch (error) {
 
@@ -64,7 +45,13 @@ function Prescriptions() {
         Verify Prescriptions
       </h1>
 
-      <div className="grid gap-5">
+      {loading && <LoadingState label="Loading prescriptions..." />}
+      {error && <ErrorState message={error} />}
+      {!loading && !error && prescriptions.length === 0 && (
+        <EmptyState message="No prescriptions found." />
+      )}
+
+      {!loading && !error && prescriptions.length > 0 && <div className="grid gap-5">
 
         {prescriptions.map((prescription) => (
 
@@ -99,22 +86,7 @@ function Prescriptions() {
               Status:
               {" "}
 
-              <span
-                className={`font-bold
-
-                ${prescription.status ===
-                  "ACTIVE"
-                  ? "text-green-500"
-                  : prescription.status ===
-                    "DISPENSED"
-                  ? "text-blue-500"
-                  : "text-red-500"
-                }`}
-              >
-
-                {prescription.status}
-
-              </span>
+              <StatusBadge status={prescription.status} />
 
             </p>
 
@@ -148,7 +120,7 @@ function Prescriptions() {
           </div>
         ))}
 
-      </div>
+      </div>}
 
     </DashboardLayout>
   );

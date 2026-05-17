@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 
 function Sidebar() {
-
-  const role = localStorage.getItem("role");
+  const { user } = useAuth();
+  const role = user?.role;
 
   return (
-    <div className="w-[250px] bg-black text-white p-5">
+    <div className="hidden w-[250px] shrink-0 bg-black p-5 text-white md:block">
 
       <h1 className="text-2xl font-bold mb-10">
         Telemedicine

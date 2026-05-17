@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
@@ -9,14 +9,13 @@ import {
   startConsultation,
   completeConsultation,
 } from "../../services/consultationService";
+import { EmptyState, ErrorState, LoadingState } from "../../components/PageState";
+import StatusBadge from "../../components/StatusBadge";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function Consultations() {
 
   const navigate = useNavigate();
-
-  const [consultations,
-    setConsultations] =
-    useState([]);
 
   const [selectedConsultation,
     setSelectedConsultation] =
@@ -30,34 +29,17 @@ function Consultations() {
     setNotes] =
     useState("");
 
-  const fetchConsultations =
-    async () => {
-
-      try {
-
-        const doctorId =
-          localStorage.getItem(
-            "userId"
-          );
-
-        const data =
-          await getDoctorConsultations(
-            doctorId
-          );
-
-        setConsultations(data);
-
-      } catch (error) {
-
-        console.log(error);
-      }
-    };
-
-  useEffect(() => {
-
-    fetchConsultations();
-
-  }, []);
+  const doctorId = localStorage.getItem("userId");
+  const loadConsultations = useCallback(
+    () => getDoctorConsultations(doctorId),
+    [doctorId]
+  );
+  const {
+    data: consultations,
+    loading,
+    error,
+    reload,
+  } = useAsyncResource(loadConsultations);
 
   const handleStart =
     async (id) => {
@@ -66,7 +48,7 @@ function Consultations() {
 
         await startConsultation(id);
 
-        fetchConsultations();
+        reload();
 
       } catch (error) {
 
@@ -87,15 +69,10 @@ function Consultations() {
           }
         );
 
-        alert(
-          "Consultation Completed"
-        );
-
         setSelectedConsultation(
           null
         );
-
-        fetchConsultations();
+        reload();
 
       } catch (error) {
 
@@ -110,7 +87,13 @@ function Consultations() {
         Doctor Consultations
       </h1>
 
-      <div className="grid gap-5">
+      {loading && <LoadingState label="Loading consultations..." />}
+      {error && <ErrorState message={error} />}
+      {!loading && !error && consultations.length === 0 && (
+        <EmptyState message="No consultations found." />
+      )}
+
+      {!loading && !error && consultations.length > 0 && <div className="grid gap-5">
 
         {consultations.map(
           (consultation) => (
@@ -131,7 +114,7 @@ function Consultations() {
 
               Status:
               {" "}
-              {consultation.status}
+              <StatusBadge status={consultation.status} />
 
             </p>
 
@@ -195,7 +178,7 @@ function Consultations() {
           </div>
         ))}
 
-      </div>
+      </div>}
 
       {selectedConsultation && (
 

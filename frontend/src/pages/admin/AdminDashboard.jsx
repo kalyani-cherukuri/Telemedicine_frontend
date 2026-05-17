@@ -1,68 +1,30 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
 import API from "../../api/axios";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function AdminDashboard() {
 
-  const [users, setUsers] =
-    useState([]);
-
-  const [consultations,
-    setConsultations] =
-    useState([]);
-
-  const [prescriptions,
-    setPrescriptions] =
-    useState([]);
-
-  const fetchDashboardData =
-    async () => {
-
-      try {
-
-        const usersResponse =
-          await API.get("/users");
-
-        setUsers(
-          usersResponse.data
-        );
-
-        const consultationsResponse =
-          await API.get("/consultations");
-
-        setConsultations(
-          consultationsResponse.data
-        );
-
-        try {
-
-          const prescriptionsResponse =
-            await API.get(
-              "/prescriptions"
-            );
-
-          setPrescriptions(
-            prescriptionsResponse.data
-          );
-
-        } catch {
-
-          setPrescriptions([]);
-        }
-
-      } catch (error) {
-
-        console.log(error);
-      }
+  const loadDashboard = useCallback(async () => {
+    const [usersResponse, consultationsResponse, prescriptionsResponse] =
+      await Promise.all([
+        API.get("/users"),
+        API.get("/consultations"),
+        API.get("/prescriptions").catch(() => ({ data: [] })),
+      ]);
+    return {
+      users: usersResponse.data,
+      consultations: consultationsResponse.data,
+      prescriptions: prescriptionsResponse.data,
     };
-
-  useEffect(() => {
-
-    fetchDashboardData();
-
   }, []);
+
+  const { data } = useAsyncResource(loadDashboard);
+  const users = data.users || [];
+  const consultations = data.consultations || [];
+  const prescriptions = data.prescriptions || [];
 
   const totalPatients =
     users.filter(

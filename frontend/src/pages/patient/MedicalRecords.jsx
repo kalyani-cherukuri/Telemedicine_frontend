@@ -1,42 +1,26 @@
-import {
-  useEffect,
-  useState,
-} from "react";
-
 import DashboardLayout
 from "../../layout/DashboardLayout";
+import { useCallback } from "react";
 
 import {
   getPatientRecords,
   downloadMedicalRecord,
 } from "../../services/medicalRecordService";
+import { EmptyState, ErrorState, LoadingState } from "../../components/PageState";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function MedicalRecords() {
 
-  const [records,
-    setRecords] =
-    useState([]);
-
-  const fetchRecords =
-    async () => {
-
-      try {
-
-        const patientId =
-  localStorage.getItem("userId");
-
-const data=await getPatientRecords(patientId);
-
-        setRecords(data);
-
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-  useEffect(() => {
-    fetchRecords();
-  }, []);
+  const patientId = localStorage.getItem("userId");
+  const loadRecords = useCallback(
+    () => getPatientRecords(patientId),
+    [patientId]
+  );
+  const {
+    data: records,
+    loading,
+    error,
+  } = useAsyncResource(loadRecords);
 
   return (
     <DashboardLayout>
@@ -45,7 +29,13 @@ const data=await getPatientRecords(patientId);
         Medical Records
       </h1>
 
-      <div className="grid gap-5">
+      {loading && <LoadingState label="Loading medical records..." />}
+      {error && <ErrorState message={error} />}
+      {!loading && !error && records.length === 0 && (
+        <EmptyState message="No medical records found." />
+      )}
+
+      {!loading && !error && records.length > 0 && <div className="grid gap-5">
 
         {records.map((record) => (
 
@@ -80,7 +70,7 @@ const data=await getPatientRecords(patientId);
           </div>
         ))}
 
-      </div>
+      </div>}
 
     </DashboardLayout>
   );

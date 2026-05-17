@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { loginUser } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/useAuth";
 
 function Login() {
 
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     email: "",
@@ -22,12 +26,10 @@ function Login() {
     e.preventDefault();
 
     try {
-
+      setSubmitting(true);
+      setError("");
       const response = await loginUser(formData);
-
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("role", response.role);
-      localStorage.setItem("userId", response.id);
+      login(response);
 
       if (response.role === "ROLE_PATIENT") {
         navigate("/patient/dashboard");
@@ -46,8 +48,9 @@ function Login() {
       }
 
     } catch (error) {
-      console.log(error);
-      alert("Invalid Credentials");
+      setError(error.response?.data?.message || "Invalid credentials.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -69,6 +72,7 @@ function Login() {
           placeholder="Email"
           className="border p-2 w-full mb-4"
           onChange={handleChange}
+          required
         />
 
         <input
@@ -77,10 +81,13 @@ function Login() {
           placeholder="Password"
           className="border p-2 w-full mb-4"
           onChange={handleChange}
+          required
         />
 
-        <button className="bg-black text-white px-4 py-2 w-full">
-          Login
+        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+
+        <button disabled={submitting} className="w-full bg-black px-4 py-2 text-white disabled:opacity-60">
+          {submitting ? "Logging in..." : "Login"}
         </button>
 
       </form>

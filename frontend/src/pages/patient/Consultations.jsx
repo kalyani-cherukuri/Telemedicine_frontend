@@ -1,45 +1,34 @@
-import { useEffect, useState } from "react";
-
 import DashboardLayout from "../../layout/DashboardLayout";
+import { useCallback } from "react";
 
 import {
   getPatientConsultations,
   cancelConsultation,
 } from "../../services/consultationService";
+import { EmptyState, ErrorState, LoadingState } from "../../components/PageState";
+import StatusBadge from "../../components/StatusBadge";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function Consultations() {
 
-  const [consultations, setConsultations] = useState([]);
-
-  const fetchConsultations = async () => {
-
-    try {
-
-      const patientId =localStorage.getItem("userId");
-
-      const data=await getPatientConsultations(patientId);
-      console.log(data);
-
-      setConsultations(data);
-
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    fetchConsultations();
-  }, []);
+  const patientId = localStorage.getItem("userId");
+  const loadConsultations = useCallback(
+    () => getPatientConsultations(patientId),
+    [patientId]
+  );
+  const {
+    data: consultations,
+    loading,
+    error,
+    reload,
+  } = useAsyncResource(loadConsultations);
 
   const handleCancel = async (id) => {
 
     try {
 
       await cancelConsultation(id);
-
-      alert("Consultation Cancelled");
-
-      fetchConsultations();
+      reload();
 
     } catch (error) {
       console.log(error);
@@ -53,7 +42,13 @@ function Consultations() {
         My Consultations
       </h1>
 
-      <div className="bg-white rounded shadow overflow-hidden">
+      {loading && <LoadingState label="Loading consultations..." />}
+      {error && <ErrorState message={error} />}
+      {!loading && !error && consultations.length === 0 && (
+        <EmptyState message="No consultations found." />
+      )}
+
+      {!loading && !error && consultations.length > 0 && <div className="overflow-x-auto rounded bg-white shadow">
 
         <table className="w-full">
 
@@ -103,7 +98,7 @@ function Consultations() {
                 </td>
 
                 <td className="p-4">
-                  {consultation.status}
+                  <StatusBadge status={consultation.status} />
                 </td>
 
                 <td className="p-4">
@@ -136,7 +131,7 @@ function Consultations() {
 
         </table>
 
-      </div>
+      </div>}
 
     </DashboardLayout>
   );

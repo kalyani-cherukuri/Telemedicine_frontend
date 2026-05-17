@@ -1,40 +1,22 @@
-import { useEffect, useState } from "react";
-
 import DashboardLayout from "../../layout/DashboardLayout";
-
-import API from "../../api/axios";
+import { useCallback } from "react";
+import { getDoctorPrescriptions } from "../../services/prescriptionService";
+import { EmptyState, ErrorState, LoadingState } from "../../components/PageState";
+import StatusBadge from "../../components/StatusBadge";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function Prescriptions() {
 
-  const [prescriptions,
-    setPrescriptions] =
-    useState([]);
-
-  const fetchPrescriptions =
-    async () => {
-
-      try {
-
-        const response =
-          await API.get(
-            "/prescriptions"
-          );
-
-        setPrescriptions(
-          response.data
-        );
-
-      } catch (error) {
-
-        console.log(error);
-      }
-    };
-
-  useEffect(() => {
-
-    fetchPrescriptions();
-
-  }, []);
+  const doctorId = localStorage.getItem("userId");
+  const loadPrescriptions = useCallback(
+    () => getDoctorPrescriptions(doctorId),
+    [doctorId]
+  );
+  const {
+    data: prescriptions,
+    loading,
+    error,
+  } = useAsyncResource(loadPrescriptions);
 
   return (
     <DashboardLayout>
@@ -43,7 +25,13 @@ function Prescriptions() {
         Doctor Prescriptions
       </h1>
 
-      <div className="bg-white rounded shadow overflow-x-auto">
+      {loading && <LoadingState label="Loading prescriptions..." />}
+      {error && <ErrorState message={error} />}
+      {!loading && !error && prescriptions.length === 0 && (
+        <EmptyState message="No prescriptions found." />
+      )}
+
+      {!loading && !error && prescriptions.length > 0 && <div className="overflow-x-auto rounded bg-white shadow">
 
         <table className="w-full">
 
@@ -95,25 +83,7 @@ function Prescriptions() {
 
                 <td className="p-4">
 
-                  <span
-                    className={`px-3 py-1 rounded text-white
-
-                    ${
-                      prescription.status ===
-                      "ACTIVE"
-                        ? "bg-green-500"
-                        : prescription.status ===
-                          "DISPENSED"
-                        ? "bg-blue-500"
-                        : "bg-red-500"
-                    }`}
-                  >
-
-                    {
-                      prescription.status
-                    }
-
-                  </span>
+                  <StatusBadge status={prescription.status} />
 
                 </td>
 
@@ -130,7 +100,7 @@ function Prescriptions() {
 
         </table>
 
-      </div>
+      </div>}
 
     </DashboardLayout>
   );

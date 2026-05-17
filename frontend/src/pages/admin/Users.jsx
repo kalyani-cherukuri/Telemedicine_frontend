@@ -1,33 +1,21 @@
-import { useEffect, useState } from "react";
-
 import DashboardLayout from "../../layout/DashboardLayout";
+import { useCallback } from "react";
 
 import API from "../../api/axios";
+import { EmptyState, ErrorState, LoadingState } from "../../components/PageState";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function Users() {
-
-  const [users, setUsers] = useState([]);
-
-  const fetchUsers = async () => {
-
-    try {
-
-      const response =
-        await API.get("/users");
-
-      setUsers(response.data);
-
-    } catch (error) {
-
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-
-    fetchUsers();
-
+  const loadUsers = useCallback(async () => {
+    const response = await API.get("/users");
+    return response.data;
   }, []);
+
+  const {
+    data: users,
+    loading,
+    error,
+  } = useAsyncResource(loadUsers);
 
   return (
     <DashboardLayout>
@@ -36,7 +24,11 @@ function Users() {
         Users Management
       </h1>
 
-      <div className="bg-white rounded shadow overflow-hidden">
+      {loading && <LoadingState label="Loading users..." />}
+      {error && <ErrorState message={error} />}
+      {!loading && !error && users.length === 0 && <EmptyState message="No users found." />}
+
+      {!loading && !error && users.length > 0 && <div className="overflow-x-auto rounded bg-white shadow">
 
         <table className="w-full">
 
@@ -104,7 +96,7 @@ function Users() {
 
         </table>
 
-      </div>
+      </div>}
 
     </DashboardLayout>
   );

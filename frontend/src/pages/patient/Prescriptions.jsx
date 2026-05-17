@@ -1,39 +1,27 @@
-import { useEffect, useState }
-from "react";
-
 import DashboardLayout
 from "../../layout/DashboardLayout";
+import { useCallback } from "react";
 
 import {
   getPatientPrescriptions,
   downloadPrescription,
 } from "../../services/prescriptionService";
+import { EmptyState, ErrorState, LoadingState } from "../../components/PageState";
+import StatusBadge from "../../components/StatusBadge";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function Prescriptions() {
 
-  const [prescriptions,
-    setPrescriptions] =
-    useState([]);
-
-  const fetchPrescriptions =
-    async () => {
-
-      try {
-
-        const patientId =
-  localStorage.getItem("userId");
-
-const data=await getPatientPrescriptions(patientId);
-        setPrescriptions(data);
-
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-  useEffect(() => {
-    fetchPrescriptions();
-  }, []);
+  const patientId = localStorage.getItem("userId");
+  const loadPrescriptions = useCallback(
+    () => getPatientPrescriptions(patientId),
+    [patientId]
+  );
+  const {
+    data: prescriptions,
+    loading,
+    error,
+  } = useAsyncResource(loadPrescriptions);
 
   return (
     <DashboardLayout>
@@ -42,7 +30,13 @@ const data=await getPatientPrescriptions(patientId);
         My Prescriptions
       </h1>
 
-      <div className="grid gap-5">
+      {loading && <LoadingState label="Loading prescriptions..." />}
+      {error && <ErrorState message={error} />}
+      {!loading && !error && prescriptions.length === 0 && (
+        <EmptyState message="No prescriptions found." />
+      )}
+
+      {!loading && !error && prescriptions.length > 0 && <div className="grid gap-5">
 
         {prescriptions.map((prescription) => (
 
@@ -58,7 +52,7 @@ const data=await getPatientPrescriptions(patientId);
             <p className="mt-2">
               Status:
               {" "}
-              {prescription.status}
+              <StatusBadge status={prescription.status} />
             </p>
 
             <p className="mt-2">
@@ -81,7 +75,7 @@ const data=await getPatientPrescriptions(patientId);
           </div>
         ))}
 
-      </div>
+      </div>}
 
     </DashboardLayout>
   );

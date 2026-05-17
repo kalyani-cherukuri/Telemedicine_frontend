@@ -52,8 +52,12 @@ export const downloadPrescription =
 
     const response =
       await API.get(
-        `/prescriptions/doctor/${doctorId}`
+        "/prescriptions"
       );
 
-    return response.data;
+    return response.data.filter(
+      (prescription) =>
+        String(prescription.doctorId) ===
+        String(doctorId)
+    );
   };

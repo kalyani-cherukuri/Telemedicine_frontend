@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 
@@ -13,67 +13,24 @@ import {
 import {
   getPatientRecords,
 } from "../../services/medicalRecordService";
+import useAsyncResource from "../../hooks/useAsyncResource";
 
 function PatientDashboard() {
 
-  const [consultations,
-    setConsultations] =
-    useState([]);
-
-  const [prescriptions,
-    setPrescriptions] =
-    useState([]);
-
-  const [records,
-    setRecords] =
-    useState([]);
-
   const patientId =
     localStorage.getItem("userId");
-
-  const fetchDashboardData =
-    async () => {
-
-      try {
-
-        const consultationsData =
-          await getPatientConsultations(
-            patientId
-          );
-
-        setConsultations(
-          consultationsData
-        );
-
-        const prescriptionsData =
-          await getPatientPrescriptions(
-            patientId
-          );
-
-        setPrescriptions(
-          prescriptionsData
-        );
-
-        const recordsData =
-          await getPatientRecords(
-            patientId
-          );
-
-        setRecords(recordsData);
-
-      } catch (error) {
-
-        console.log(error);
-      }
-    };
-
-  useEffect(() => {
-
-    if (patientId) {
-      fetchDashboardData();
-    }
-
+  const loadDashboard = useCallback(async () => {
+    const [consultations, prescriptions, records] = await Promise.all([
+      getPatientConsultations(patientId),
+      getPatientPrescriptions(patientId),
+      getPatientRecords(patientId),
+    ]);
+    return { consultations, prescriptions, records };
   }, [patientId]);
+  const { data } = useAsyncResource(loadDashboard);
+  const consultations = data.consultations || [];
+  const prescriptions = data.prescriptions || [];
+  const records = data.records || [];
 
   return (
     <DashboardLayout>

@@ -10,8 +10,10 @@ function Register() {
     name: "",
     email: "",
     password: "",
-    role: "ROLE_PATIENT",
+    role: "PATIENT",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
 
@@ -26,18 +28,17 @@ function Register() {
     e.preventDefault();
 
     try {
-
+      setSubmitting(true);
+      setMessage("");
       await registerUser(formData);
-
-      alert("Registration Successful");
+      setMessage("Registration successful.");
 
       navigate("/login");
 
     } catch (error) {
-
-      console.log(error);
-
-      alert("Registration Failed");
+      setMessage(error.response?.data?.message || "Registration failed.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -82,31 +83,35 @@ function Register() {
 
         <select
           name="role"
+          value={formData.role}
           className="w-full border p-3 rounded-lg mb-5"
           onChange={handleChange}
         >
-          <option value="ROLE_ADMIN">
+          <option value="ADMIN">
             Admin
           </option>
-          <option value="ROLE_PATIENT">
+          <option value="PATIENT">
             Patient
           </option>
 
-          <option value="ROLE_DOCTOR">
+          <option value="DOCTOR">
             Doctor
           </option>
 
-          <option value="ROLE_PHARMACIST">
+          <option value="PHARMACIST">
             Pharmacist
           </option>
 
         </select>
 
+        {message && <p className="mb-4 text-sm text-gray-700">{message}</p>}
+
         <button
           type="submit"
-          className="w-full bg-black text-white py-3 rounded-lg"
+          disabled={submitting}
+          className="w-full rounded-lg bg-black py-3 text-white disabled:opacity-60"
         >
-          Register
+          {submitting ? "Registering..." : "Register"}
         </button>
 
         <p className="text-center mt-5">

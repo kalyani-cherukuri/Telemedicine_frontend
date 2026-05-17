@@ -14,25 +14,32 @@ function Doctors() {
   const [scheduledAt, setScheduledAt] = useState("");
 
   const [symptoms, setSymptoms] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [booking, setBooking] = useState(false);
+  const [message, setMessage] = useState("");
 
   const fetchDoctors = async () => {
 
     try {
-
+      setLoading(true);
+      setMessage("");
       const data =
         await getDoctorsBySpecialization(specialization);
 
       setDoctors(data);
 
     } catch (error) {
-      console.log(error);
+      setMessage(error.response?.data?.message || "Failed to load doctors.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleBook = async () => {
 
     try {
-
+      setBooking(true);
+      setMessage("");
       const consultationData = {
         patientId:Number(localStorage.getItem("userId")),
         doctorId: Number(selectedDoctor.id),
@@ -40,17 +47,15 @@ function Doctors() {
         scheduledAt,
         symptoms,
       };
-      console.log(consultationData);
-
       await bookConsultation(consultationData);
-
-      alert("Consultation Booked");
+      setMessage("Consultation booked.");
 
       setSelectedDoctor(null);
 
     } catch (error) {
-      console.log(error);
-      alert("Booking Failed");
+      setMessage(error.response?.data?.message || "Booking failed.");
+    } finally {
+      setBooking(false);
     }
   };
 
@@ -87,7 +92,12 @@ function Doctors() {
 
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      {message && <p className="mb-4 text-sm text-gray-700">{message}</p>}
+
+      {loading ? (
+        <p>Loading doctors...</p>
+      ) : (
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
 
         {doctors.map((doctor) => (
 
@@ -129,6 +139,7 @@ function Doctors() {
         ))}
 
       </div>
+      )}
 
       {selectedDoctor && (
 
@@ -146,6 +157,7 @@ function Doctors() {
               onChange={(e) =>
                 setScheduledAt(e.target.value)
               }
+              required
             />
 
             <textarea
@@ -154,13 +166,15 @@ function Doctors() {
               onChange={(e) =>
                 setSymptoms(e.target.value)
               }
+              required
             />
 
             <button
               onClick={handleBook}
-              className="bg-black text-white px-5 py-2 rounded w-full"
+              disabled={booking || !scheduledAt || !symptoms}
+              className="w-full rounded bg-black px-5 py-2 text-white disabled:opacity-60"
             >
-              Confirm Booking
+              {booking ? "Booking..." : "Confirm Booking"}
             </button>
 
           </div>

@@ -1,16 +1,18 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 
 function Navbar() {
 
   const navigate = useNavigate();
+  const { logout: clearSession } = useAuth();
 
   const logout = () => {
-    localStorage.clear();
+    clearSession();
     navigate("/login");
   };
 
   return (
-    <div className="bg-white shadow p-4 flex justify-between">
+    <div className="flex justify-between bg-white p-4 shadow">
 
       <h1 className="font-bold text-xl">
         Dashboard
